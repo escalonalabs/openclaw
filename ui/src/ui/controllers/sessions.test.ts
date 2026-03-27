@@ -71,6 +71,7 @@ describe("deleteSessionsAndRefresh", () => {
     expect(request).toHaveBeenNthCalledWith(3, "sessions.list", {
       includeGlobal: true,
       includeUnknown: true,
+      includeDerivedTitles: true,
     });
     expect(state.sessionsLoading).toBe(false);
   });

@@ -64,6 +64,17 @@ const FAST_LEVELS = [
 ] as const;
 const REASONING_LEVELS = ["", "off", "on", "stream"] as const;
 const PAGE_SIZES = [10, 25, 50, 100] as const;
+const CHANNEL_LABELS: Record<string, string> = {
+  bluebubbles: "iMessage",
+  telegram: "Telegram",
+  discord: "Discord",
+  signal: "Signal",
+  slack: "Slack",
+  whatsapp: "WhatsApp",
+  matrix: "Matrix",
+  email: "Email",
+  sms: "SMS",
+};
 
 function normalizeProviderId(provider?: string | null): string {
   if (!provider) {
@@ -130,17 +141,78 @@ function resolveThinkLevelPatchValue(value: string, isBinary: boolean): string |
   return value;
 }
 
+function trimMaybeString(value?: string | null): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function formatChannelLabel(value?: string | null): string {
+  const trimmed = trimMaybeString(value);
+  if (!trimmed) {
+    return "";
+  }
+  return CHANNEL_LABELS[trimmed.toLowerCase()] ?? trimmed;
+}
+
+function uniqueNonEmpty(values: Array<string | null | undefined>): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const value of values) {
+    const trimmed = trimMaybeString(value);
+    if (!trimmed) {
+      continue;
+    }
+    const normalized = trimmed.toLowerCase();
+    if (seen.has(normalized)) {
+      continue;
+    }
+    seen.add(normalized);
+    result.push(trimmed);
+  }
+  return result;
+}
+
+function resolveSecondaryTitle(row: GatewaySessionRow): string | null {
+  const key = trimMaybeString(row.key);
+  const label = trimMaybeString(row.label);
+  for (const candidate of [row.derivedTitle, row.displayName]) {
+    const trimmed = trimMaybeString(candidate);
+    if (!trimmed || trimmed === key || trimmed === label) {
+      continue;
+    }
+    return trimmed;
+  }
+  return null;
+}
+
+function resolveContextMeta(row: GatewaySessionRow, secondaryTitle?: string | null): string | null {
+  const title = trimMaybeString(secondaryTitle);
+  const parts = uniqueNonEmpty([
+    formatChannelLabel(row.channel),
+    row.groupChannel,
+    row.subject,
+  ]).filter((part) => part.toLowerCase() !== title.toLowerCase());
+  return parts.length > 0 ? parts.join(" • ") : null;
+}
+
 function filterRows(rows: GatewaySessionRow[], query: string): GatewaySessionRow[] {
   const q = query.trim().toLowerCase();
   if (!q) {
     return rows;
   }
   return rows.filter((row) => {
-    const key = (row.key ?? "").toLowerCase();
-    const label = (row.label ?? "").toLowerCase();
-    const kind = (row.kind ?? "").toLowerCase();
-    const displayName = (row.displayName ?? "").toLowerCase();
-    return key.includes(q) || label.includes(q) || kind.includes(q) || displayName.includes(q);
+    const haystack = [
+      row.key,
+      row.label,
+      row.kind,
+      row.displayName,
+      row.derivedTitle,
+      row.channel,
+      row.groupChannel,
+      row.subject,
+    ]
+      .map((value) => trimMaybeString(value).toLowerCase())
+      .filter(Boolean);
+    return haystack.some((value) => value.includes(q));
   });
 }
 
@@ -443,15 +515,8 @@ function renderRow(
   const verboseLevels = withCurrentLabeledOption(VERBOSE_LEVELS, verbose);
   const reasoning = row.reasoningLevel ?? "";
   const reasoningLevels = withCurrentOption(REASONING_LEVELS, reasoning);
-  const displayName =
-    typeof row.displayName === "string" && row.displayName.trim().length > 0
-      ? row.displayName.trim()
-      : null;
-  const showDisplayName = Boolean(
-    displayName &&
-    displayName !== row.key &&
-    displayName !== (typeof row.label === "string" ? row.label.trim() : ""),
-  );
+  const secondaryTitle = resolveSecondaryTitle(row);
+  const contextMeta = resolveContextMeta(row, secondaryTitle);
   const canLink = row.kind !== "global";
   const chatUrl = canLink
     ? `${pathForTab("chat", basePath)}?session=${encodeURIComponent(row.key)}`
@@ -502,8 +567,13 @@ function renderRow(
               : row.key
           }
           ${
-            showDisplayName
-              ? html`<span class="muted session-key-display-name">${displayName}</span>`
+            secondaryTitle
+              ? html`<span class="muted session-key-display-name">${secondaryTitle}</span>`
+              : nothing
+          }
+          ${
+            contextMeta
+              ? html`<span class="muted session-key-display-name">${contextMeta}</span>`
               : nothing
           }
         </div>

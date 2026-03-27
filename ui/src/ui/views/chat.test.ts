@@ -370,6 +370,39 @@ describe("chat view", () => {
     expect(container.textContent).not.toContain("190k / 200k");
   });
 
+  it("renders the active session context bar with channel and room metadata", () => {
+    const container = document.createElement("div");
+    render(
+      renderChat(
+        createProps({
+          sessionKey: "agent:main:telegram:group:-1003751611182:topic:1",
+          sessions: {
+            ts: 0,
+            path: "",
+            count: 1,
+            defaults: { modelProvider: "openai", model: "gpt-5", contextTokens: null },
+            sessions: [
+              {
+                key: "agent:main:telegram:group:-1003751611182:topic:1",
+                kind: "group",
+                updatedAt: null,
+                channel: "telegram",
+                subject: "Escalona Labs 🚀🛰",
+                derivedTitle: "Visible room UI",
+              },
+            ],
+          },
+        }),
+      ),
+      container,
+    );
+
+    expect(container.textContent).toContain("Visible room UI");
+    expect(container.textContent).toContain("Telegram");
+    expect(container.textContent).toContain("group");
+    expect(container.textContent).toContain("Escalona Labs 🚀🛰");
+  });
+
   it("uses the assistant avatar URL for the welcome state when the identity avatar is only initials", () => {
     const container = document.createElement("div");
     render(

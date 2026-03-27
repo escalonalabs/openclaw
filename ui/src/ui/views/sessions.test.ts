@@ -165,4 +165,27 @@ describe("sessions view", () => {
     expect(onDeselectAll).not.toHaveBeenCalled();
     expect(onSelectPage).not.toHaveBeenCalled();
   });
+
+  it("renders derived title and channel metadata under the session key", async () => {
+    const container = document.createElement("div");
+    render(
+      renderSessions(
+        buildProps(
+          buildResult({
+            key: "agent:main:telegram:group:-1003751611182:topic:1",
+            kind: "group",
+            updatedAt: Date.now(),
+            derivedTitle: "Visible room UI",
+            channel: "telegram",
+            subject: "Escalona Labs 🚀🛰",
+          }),
+        ),
+      ),
+      container,
+    );
+    await Promise.resolve();
+
+    expect(container.textContent).toContain("Visible room UI");
+    expect(container.textContent).toContain("Telegram • Escalona Labs 🚀🛰");
+  });
 });
