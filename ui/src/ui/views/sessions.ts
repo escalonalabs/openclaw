@@ -194,6 +194,35 @@ function resolveContextMeta(row: GatewaySessionRow, secondaryTitle?: string | nu
   return parts.length > 0 ? parts.join(" • ") : null;
 }
 
+function resolveDeliveryContext(row: GatewaySessionRow): string | null {
+  const channel = trimMaybeString(row.lastChannel);
+  const to = trimMaybeString(row.lastTo);
+  if (!channel && !to) {
+    return null;
+  }
+  const parts: string[] = [];
+  if (channel) {
+    parts.push(formatChannelLabel(channel));
+  }
+  if (to) {
+    parts.push(to);
+  }
+  return parts.join(" → ");
+}
+
+function formatEstimatedCost(usd?: number | null): string {
+  if (usd == null || usd <= 0) {
+    return "";
+  }
+  if (usd < 0.001) {
+    return `$${(usd * 1_000_000).toFixed(2)}μ`;
+  }
+  if (usd < 1) {
+    return `$${usd.toFixed(4)}`;
+  }
+  return `$${usd.toFixed(2)}`;
+}
+
 function filterRows(rows: GatewaySessionRow[], query: string): GatewaySessionRow[] {
   const q = query.trim().toLowerCase();
   if (!q) {
@@ -583,6 +612,12 @@ function renderRow(
               ? html`<span class="muted session-key-display-name" style="font-style:italic;">${row.lastMessagePreview}</span>`
               : nothing
           }
+          ${(() => {
+            const delivery = resolveDeliveryContext(row);
+            return delivery
+              ? html`<span class="muted session-key-display-name" style="font-size:11px; opacity:0.75;">→ ${delivery}</span>`
+              : nothing;
+          })()}
         </div>
       </td>
       <td>
@@ -635,7 +670,13 @@ function renderRow(
           <span class="${isRecent ? "muted" : ""}">${updated}</span>
         </div>
       </td>
-      <td>${formatSessionTokens(row)}</td>
+      <td>
+        <div>${formatSessionTokens(row)}</div>
+        ${(() => {
+          const cost = formatEstimatedCost(row.estimatedCostUsd);
+          return cost ? html`<div class="muted" style="font-size:11px;">${cost}</div>` : nothing;
+        })()}
+      </td>
       <td>
         <select
           ?disabled=${disabled}

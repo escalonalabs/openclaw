@@ -312,6 +312,14 @@ function renderSessionContextBar(
   const detail = uniqueNonEmpty([subject, displayName]).filter(
     (part) => part.toLowerCase() !== title.toLowerCase(),
   );
+  const deliveryInfo = (() => {
+    const ch = trimMaybeString(session.lastChannel);
+    const to = trimMaybeString(session.lastTo);
+    if (!ch && !to) {
+      return null;
+    }
+    return `${formatChannelLabel(ch)}${to ? " → " + to : ""}`;
+  })();
 
   return html`
     <div
@@ -334,6 +342,11 @@ function renderSessionContextBar(
       ${
         detail.length > 0
           ? html`<div class="muted" style="font-size:12px; line-height:1.4;">${detail.join(" • ")}</div>`
+          : nothing
+      }
+      ${
+        deliveryInfo
+          ? html`<div class="muted" style="font-size:11px; opacity:0.75;">→ ${deliveryInfo}</div>`
           : nothing
       }
     </div>
