@@ -312,7 +312,7 @@ describe("chat view", () => {
     expect(container.textContent).not.toContain("757.3k / 200k");
   });
 
-  it("hides the context notice when totalTokens is missing even if inputTokens is high", () => {
+  it("shows the context notice when inputTokens is high even if totalTokens is missing", () => {
     const container = document.createElement("div");
     render(
       renderChat(
@@ -337,7 +337,7 @@ describe("chat view", () => {
       container,
     );
 
-    expect(container.textContent).not.toContain("context used");
+    expect(container.textContent).toContain("context used");
   });
 
   it("hides the context notice when totalTokens is marked stale", () => {
