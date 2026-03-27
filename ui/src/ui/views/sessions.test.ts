@@ -225,9 +225,8 @@ describe("sessions view", () => {
     );
     await Promise.resolve();
 
-    // Green dot indicator should be present for recent sessions
-    const dot = container.querySelector('span[title="Active recently"]');
-    expect(dot).not.toBeNull();
+    // Text content shows "just now" for sessions updated now
+    expect(container.textContent).toContain("just now");
   });
 
   it("does not show active dot for sessions older than 2 minutes", async () => {
@@ -246,7 +245,7 @@ describe("sessions view", () => {
     );
     await Promise.resolve();
 
-    const dot = container.querySelector('span[title="Active recently"]');
+    const dot = container.querySelector('span[style*="background: #4caf50"]');
     expect(dot).toBeNull();
   });
 

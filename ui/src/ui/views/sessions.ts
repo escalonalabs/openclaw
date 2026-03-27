@@ -536,6 +536,32 @@ function renderRow(
   const updated = row.updatedAt ? formatRelativeTimestamp(row.updatedAt) : "n/a";
   const isRecent =
     row.updatedAt != null && row.updatedAt > 0 && Date.now() - row.updatedAt < 2 * 60 * 1000;
+  const isRunning = row.status === "running";
+  const startedAgo = row.startedAt ? formatRelativeTimestamp(row.startedAt) : null;
+  const durationMs = row.startedAt && row.endedAt ? row.endedAt - row.startedAt : null;
+  const durationLabel = (() => {
+    if (durationMs == null || durationMs <= 0) {
+      return null;
+    }
+    const s = Math.round(durationMs / 1000);
+    if (s < 60) {
+      return `${s}s`;
+    }
+    const m = Math.round(s / 60);
+    if (m < 60) {
+      return `${m}m`;
+    }
+    const h = Math.round(m / 60);
+    return `${h}h ${m % 60}m`;
+  })();
+  const updatedTitle = [
+    row.updatedAt ? `Updated: ${new Date(row.updatedAt).toLocaleString()}` : null,
+    row.startedAt ? `Started: ${new Date(row.startedAt).toLocaleString()}` : null,
+    durationLabel ? `Duration: ${durationLabel}` : null,
+    row.endedAt ? `Ended: ${new Date(row.endedAt).toLocaleString()}` : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
   const rawThinking = row.thinkingLevel ?? "";
   const isBinaryThinking = isBinaryThinkingProvider(row.modelProvider);
   const thinking = resolveThinkLevelDisplay(rawThinking, isBinaryThinking);
@@ -698,13 +724,12 @@ function renderRow(
           }
         </div>
       </td>
-      <td>
+      <td title=${updatedTitle}>
         <div style="display:flex; align-items:center; gap:6px;">
           ${
             isRecent
               ? html`
                   <span
-                    title="Active recently"
                     style="
                       display: inline-block;
                       width: 8px;
@@ -717,7 +742,11 @@ function renderRow(
                 `
               : nothing
           }
-          <span class="${isRecent ? "muted" : ""}">${updated}</span>
+          ${
+            isRunning && startedAgo
+              ? html`<span style="color:#2e7d32; font-weight:500;">● ${startedAgo} active</span>`
+              : html`<span class="${isRecent ? "muted" : ""}">${updated}</span>`
+          }
         </div>
       </td>
       <td>
