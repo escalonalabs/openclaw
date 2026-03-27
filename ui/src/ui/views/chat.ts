@@ -305,14 +305,24 @@ function renderSessionContextBar(
   const derivedTitle = trimMaybeString(session.derivedTitle);
   const fallbackTitle = resolveSessionDisplayName(sessionKey, session);
   const title = derivedTitle || subject || displayName || fallbackTitle;
+  const sessionModel = trimMaybeString(session.model);
   const modelBadge = (() => {
-    const p = typeof modelProvider === "string" ? modelProvider.trim() : "";
-    const m = typeof model === "string" ? model.trim() : "";
-    if (!p && !m) {
+    const resolved =
+      sessionModel ||
+      (typeof model === "string" ? model.trim() : "") ||
+      (typeof modelProvider === "string" ? modelProvider.trim() : "");
+    if (!resolved) {
       return null;
     }
-    const label = m || p;
-    return label ? `🤖 ${label}` : null;
+    return `🤖 ${resolved}`;
+  })();
+  const responseUsageBadge = (() => {
+    const ru = session.responseUsage;
+    if (!ru || ru === "off") {
+      return null;
+    }
+    const map: Record<string, string> = { on: "📊 usage", tokens: "📊 tokens", full: "📊 full" };
+    return map[ru] ?? null;
   })();
   const badges = uniqueNonEmpty([
     session.kind !== "unknown" ? session.kind : null,
@@ -325,6 +335,7 @@ function renderSessionContextBar(
         ? `🤖 depth:${session.spawnDepth}`
         : null,
     modelBadge,
+    responseUsageBadge,
   ]);
   const detail = uniqueNonEmpty([subject, displayName]).filter(
     (part) => part.toLowerCase() !== title.toLowerCase(),
