@@ -308,6 +308,11 @@ function renderSessionContextBar(
     channelLabel,
     session.groupChannel,
     session.sendPolicy === "deny" ? "🛡️ Guardian" : null,
+    session.spawnDepth === 1
+      ? "🤖 subagent"
+      : session.spawnDepth != null && session.spawnDepth > 1
+        ? `🤖 depth:${session.spawnDepth}`
+        : null,
   ]);
   const detail = uniqueNonEmpty([subject, displayName]).filter(
     (part) => part.toLowerCase() !== title.toLowerCase(),
@@ -319,6 +324,12 @@ function renderSessionContextBar(
       return null;
     }
     return `${formatChannelLabel(ch)}${to ? " → " + to : ""}`;
+  })();
+  const originSurface = (() => {
+    if (typeof session.origin?.surface === "string" && session.origin.surface.trim()) {
+      return session.origin.surface.trim();
+    }
+    return null;
   })();
 
   return html`
@@ -347,6 +358,11 @@ function renderSessionContextBar(
       ${
         deliveryInfo
           ? html`<div class="muted" style="font-size:11px; opacity:0.75;">→ ${deliveryInfo}</div>`
+          : nothing
+      }
+      ${
+        originSurface
+          ? html`<div class="muted" style="font-size:11px; opacity:0.65;">surface: ${originSurface}</div>`
           : nothing
       }
     </div>

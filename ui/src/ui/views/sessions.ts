@@ -651,6 +651,19 @@ function renderRow(
                 `
               : nothing
           }
+          ${
+            row.spawnDepth === 1
+              ? html`
+                  <span
+                    class="data-table-badge"
+                    style="background: #e3f2fd; color: #1565c0; border: 1px solid #90caf9"
+                    >🤖 subagent</span
+                  >
+                `
+              : row.spawnDepth != null && row.spawnDepth > 1
+                ? html`<span class="data-table-badge" style="background:#e3f2fd; color:#1565c0; border:1px solid #90caf9;">🤖 depth:${row.spawnDepth}</span>`
+                : nothing
+          }
         </div>
       </td>
       <td>

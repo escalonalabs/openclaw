@@ -402,6 +402,7 @@ export type GatewaySessionRow = {
   endedAt?: number;
   runtimeMs?: number;
   parentSessionKey?: string;
+  spawnDepth?: number;
   childSessions?: string[];
   responseUsage?: "on" | "off" | "tokens" | "full";
   model?: string;
