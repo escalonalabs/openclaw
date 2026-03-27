@@ -618,6 +618,11 @@ function renderRow(
               ? html`<span class="muted session-key-display-name" style="font-size:11px; opacity:0.75;">→ ${delivery}</span>`
               : nothing;
           })()}
+          ${
+            row.parentSessionKey
+              ? html`<span class="muted session-key-display-name" style="font-size:11px; opacity:0.65;">⊕ from ${row.parentSessionKey}</span>`
+              : nothing
+          }
         </div>
       </td>
       <td>
