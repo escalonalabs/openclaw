@@ -591,7 +591,20 @@ function renderRow(
         />
       </td>
       <td>
-        <span class="data-table-badge ${badgeClass}">${row.kind}</span>
+        <div style="display:flex; gap:4px; align-items:center;">
+          <span class="data-table-badge ${badgeClass}">${row.kind}</span>
+          ${
+            row.sendPolicy === "deny"
+              ? html`
+                  <span
+                    class="data-table-badge"
+                    style="background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7"
+                    >🛡️ Guardian</span
+                  >
+                `
+              : nothing
+          }
+        </div>
       </td>
       <td>${updated}</td>
       <td>${formatSessionTokens(row)}</td>

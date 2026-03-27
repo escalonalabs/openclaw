@@ -307,6 +307,7 @@ function renderSessionContextBar(
     session.kind !== "unknown" ? session.kind : null,
     channelLabel,
     session.groupChannel,
+    session.sendPolicy === "deny" ? "🛡️ Guardian" : null,
   ]);
   const detail = uniqueNonEmpty([subject, displayName]).filter(
     (part) => part.toLowerCase() !== title.toLowerCase(),

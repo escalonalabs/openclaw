@@ -188,4 +188,44 @@ describe("sessions view", () => {
     expect(container.textContent).toContain("Visible room UI");
     expect(container.textContent).toContain("Telegram • Escalona Labs 🚀🛰");
   });
+
+  it("shows Guardian badge on rows with sendPolicy deny", async () => {
+    const container = document.createElement("div");
+    render(
+      renderSessions(
+        buildProps(
+          buildResult({
+            key: "agent:main:telegram:group:-1003751611182:topic:1",
+            kind: "group",
+            updatedAt: Date.now(),
+            sendPolicy: "deny" as const,
+          }),
+        ),
+      ),
+      container,
+    );
+    await Promise.resolve();
+
+    expect(container.textContent).toContain("🛡️ Guardian");
+  });
+
+  it("does not show Guardian badge on rows with sendPolicy allow", async () => {
+    const container = document.createElement("div");
+    render(
+      renderSessions(
+        buildProps(
+          buildResult({
+            key: "agent:main:telegram:group:-1003751611182:topic:1",
+            kind: "group",
+            updatedAt: Date.now(),
+            sendPolicy: "allow" as const,
+          }),
+        ),
+      ),
+      container,
+    );
+    await Promise.resolve();
+
+    expect(container.textContent).not.toContain("Guardian");
+  });
 });
