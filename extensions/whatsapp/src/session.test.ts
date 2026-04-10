@@ -358,22 +358,33 @@ describe("web session", () => {
     creds.restore();
   });
 
-  it("keeps creds.json valid when a save would otherwise truncate it", async () => {
+  it("keeps the previous creds.json valid if the atomic rename fails", async () => {
     const authDir = fsSync.mkdtempSync(
       path.join((process.env.TMPDIR ?? "/tmp").replace(/\/+$/, ""), "openclaw-wa-creds-atomic-"),
     );
     const credsPath = path.join(authDir, "creds.json");
-    fsSync.writeFileSync(credsPath, JSON.stringify({ me: { id: "old@s.whatsapp.net" } }), "utf-8");
+    const originalCreds = { me: { id: "old@s.whatsapp.net" } };
+    const nextCreds = { me: { id: "new@s.whatsapp.net" } };
+    fsSync.writeFileSync(credsPath, JSON.stringify(originalCreds), "utf-8");
+    const rename = fs.rename.bind(fs);
+    const renameSpy = vi.spyOn(fs, "rename").mockImplementation(async (from, to) => {
+      if (
+        typeof from === "string" &&
+        typeof to === "string" &&
+        from.startsWith(path.join(authDir, "creds.json.")) &&
+        to === credsPath
+      ) {
+        throw new Error("simulated atomic rename failure");
+      }
+      return rename(from, to);
+    });
 
     useMultiFileAuthStateMock.mockResolvedValueOnce({
       state: {
-        creds: { me: { id: "new@s.whatsapp.net" } } as never,
+        creds: nextCreds as never,
         keys: {} as never,
       },
-      saveCreds: vi.fn(async () => {
-        fsSync.writeFileSync(credsPath, "{", "utf-8");
-        throw new Error("simulated interrupted creds write");
-      }),
+      saveCreds: vi.fn(),
     });
 
     await createWaSocket(false, false, { authDir });
@@ -382,7 +393,15 @@ describe("web session", () => {
     await waitForCredsSaveQueue(authDir);
 
     const raw = fsSync.readFileSync(credsPath, "utf-8");
+    const tempEntries = fsSync
+      .readdirSync(authDir)
+      .filter((entry) => entry.startsWith("creds.json.") && entry.endsWith(".tmp"));
+
+    expect(renameSpy).toHaveBeenCalledOnce();
     expect(() => JSON.parse(raw)).not.toThrow();
-    expect(JSON.parse(raw)).toMatchObject({ me: { id: "new@s.whatsapp.net" } });
+    expect(JSON.parse(raw)).toMatchObject(originalCreds);
+    expect(tempEntries).toHaveLength(0);
+
+    renameSpy.mockRestore();
   });
 });
